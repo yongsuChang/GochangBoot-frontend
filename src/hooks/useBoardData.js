@@ -15,9 +15,10 @@ function useBoardData() {
 
     const fetchData = useCallback(async (page, size, type, word) => {
         try {
-            let url = `/api/contents?page=${page}&size=${size}`;
+            const baseUrl = import.meta.env.VITE_API_URL || '';
+            let url = `${baseUrl}/api/contents?page=${page}&size=${size}`;
             if (type && word) {
-                url = `/api/contents/search?page=${page}&size=${size}&searchType=${type}&searchWord=${word}`;
+                url = `${baseUrl}/api/contents/search?page=${page}&size=${size}&searchType=${type}&searchWord=${word}`;
             }
 
             const response = await axios.get(url);
