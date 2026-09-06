@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import BoardList from '../components/BoardList';
 import SearchBar from '../components/SearchBar';
@@ -15,8 +16,9 @@ function MainPage() {
         handleElementPerPageChange
     } = useBoardData();
 
+    const navigate = useNavigate();
     const handleRowClick = (id) => {
-        window.location.href = `/contents/${id}`;
+        navigate(`/contents/${id}`);
     };
 
     return (

@@ -1,65 +1,47 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const baseUrl = import.meta.env.VITE_API_URL || '';
+const EMPTY_PAGINATION = { total_pages: 0, total_elements: 0, current_page: 0, current_elements: 0 };
+
+/** 목록 조회. 조회 조건(query)이 바뀌면 다시 불러온다. */
 function useBoardData() {
+    const [query, setQuery] = useState({ page: 0, size: 15, type: '', word: '' });
     const [itemList, setItemList] = useState([]);
-    const [pagination, setPagination] = useState({
-        total_pages: 0,
-        total_elements: 0,
-        current_page: 0,
-        current_elements: 0
-    });
-    const [elementPerPage, setElementPerPage] = useState(15);
-    const [searchType, setSearchType] = useState('');
-    const [searchWord, setSearchWord] = useState('');
-
-    const fetchData = useCallback(async (page, size, type, word) => {
-        try {
-            const baseUrl = import.meta.env.VITE_API_URL || '';
-            let url = `${baseUrl}/api/contents?page=${page}&size=${size}`;
-            if (type && word) {
-                url = `${baseUrl}/api/contents/search?page=${page}&size=${size}&searchType=${type}&searchWord=${word}`;
-            }
-
-            const response = await axios.get(url);
-            const data = response.data;
-
-            setItemList(data.data);
-            setPagination(data.pagination);
-
-            console.log("Fetched data:", data);
-        } catch (error) {
-            console.error("Failed to fetch board data:", error);
-        }
-    }, []);
+    const [pagination, setPagination] = useState(EMPTY_PAGINATION);
 
     useEffect(() => {
-        // Initial load
-        fetchData(0, elementPerPage, searchType, searchWord);
-    }, [elementPerPage]); // searchType/Word trigger search explicitly, not on change
+        let cancelled = false;
+        const { page, size, type, word } = query;
+        // params 로 넘기면 axios 가 검색어(& 나 # 포함)를 안전하게 인코딩한다
+        const request = type && word
+            ? { url: `${baseUrl}/api/contents/search`, params: { page, size, searchType: type, searchWord: word } }
+            : { url: `${baseUrl}/api/contents`, params: { page, size } };
 
-    const handlePageClick = (page) => {
-        fetchData(page, elementPerPage, searchType, searchWord);
-    };
+        axios.get(request.url, { params: request.params })
+            .then((response) => {
+                if (cancelled) return;
+                setItemList(response.data.data ?? []);
+                setPagination(response.data.pagination ?? EMPTY_PAGINATION);
+            })
+            .catch((error) => {
+                console.error('Failed to fetch board data:', error);
+            });
 
-    const handleSearch = (type, word) => {
-        setSearchType(type);
-        setSearchWord(word);
-        fetchData(0, elementPerPage, type, word);
-    };
+        return () => { cancelled = true; };
+    }, [query]);
 
-    const handleElementPerPageChange = (size) => {
-        setElementPerPage(size);
-        // useEffect will trigger fetch
-    };
+    const handlePageClick = (page) => setQuery((q) => ({ ...q, page }));
+    const handleSearch = (type, word) => setQuery((q) => ({ ...q, page: 0, type, word }));
+    const handleElementPerPageChange = (size) => setQuery((q) => ({ ...q, page: 0, size: Number(size) }));
 
     return {
         itemList,
         pagination,
-        elementPerPage,
+        elementPerPage: query.size,
         handlePageClick,
         handleSearch,
-        handleElementPerPageChange
+        handleElementPerPageChange,
     };
 }
 

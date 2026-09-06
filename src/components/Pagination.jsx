@@ -1,9 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 
 function Pagination({ currentPage, totalPages, maxBtnSize = 10, onPageClick }) {
-    const [btnList, setBtnList] = useState([]);
-
-    useEffect(() => {
+    const btnList = useMemo(() => {
         const temp = Math.floor(currentPage / maxBtnSize);
         const list = [];
         for (let i = 1; i <= maxBtnSize; i++) {
@@ -12,7 +10,7 @@ function Pagination({ currentPage, totalPages, maxBtnSize = 10, onPageClick }) {
                 list.push(value);
             }
         }
-        setBtnList(list);
+        return list;
     }, [currentPage, totalPages, maxBtnSize]);
 
     const handlePrevious = () => {
